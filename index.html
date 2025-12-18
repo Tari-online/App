@@ -358,16 +358,19 @@
         let currentUser = null, userData = null, cart = [], historyOrders = [], allMenuItems = [], allModifiers = [], currentItem = null, modalQty = 1, editingCartIndex = -1, activeDiscount = 0, activePromoCode = "", loyaltySettings = { method: 'fixed', value: 10 };
 
         window.hideSplash = () => {
-    document.getElementById('splash-screen').style.transform = 'translateY(-100%)';
+    const splash = document.getElementById('splash-screen');
 
-    // 🔥 REMOVE CLOSED OVERLAY
-    document.getElementById('closed-banner').classList.remove('active');
+    // animate out
+    splash.style.transform = 'translateY(-100%)';
 
-    loadData();
-
+    // HARD REMOVE from interaction layer
     setTimeout(() => {
-        document.getElementById('splash-screen').remove();
-    }, 700);
+        splash.style.display = 'none';
+        splash.style.pointerEvents = 'none';
+    }, 600);
+
+    // boot app
+    loadData();
 };
         window.showToast = (msg, isErr=false) => { 
             const t = document.getElementById('toast'); 
