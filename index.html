@@ -357,7 +357,17 @@
 
         let currentUser = null, userData = null, cart = [], historyOrders = [], allMenuItems = [], allModifiers = [], currentItem = null, modalQty = 1, editingCartIndex = -1, activeDiscount = 0, activePromoCode = "", loyaltySettings = { method: 'fixed', value: 10 };
 
-        window.hideSplash = () => { document.getElementById('splash-screen').style.transform = 'translateY(-100%)'; setTimeout(()=>document.getElementById('splash-screen').classList.add('splash-gone'), 600); };
+       window.hideSplash = () => { 
+            const splash = document.getElementById('splash-screen');
+            // 1. Animate it moving up
+            splash.style.transition = "transform 0.7s cubic-bezier(0.87, 0, 0.13, 1)";
+            splash.style.transform = 'translateY(-100%)';
+            
+            // 2. Wait for animation, then Force Hide it
+            setTimeout(() => {
+                splash.style.display = 'none'; // This ensures it's truly gone
+            }, 700);
+        };
         window.showToast = (msg, isErr=false) => { 
             const t = document.getElementById('toast'); 
             document.getElementById('toast-msg').innerText = msg; 
