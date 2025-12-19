@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TARI - Instant Load Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; -webkit-tap-highlight-color: transparent; min-height: 100vh; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        :root { --primary: #FF5722; }
+        .bg-brand { background-color: var(--primary) !important; }
+        .text-brand { color: var(--primary) !important; }
+        /* Toast Notification */
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #1E293B; color: white; padding: 12px 24px; border-radius: 50px; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; opacity: 0; width: max-content; }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body class="text-slate-800 pb-24">
+
+    <div id="toast"><i id="toast-icon" class="fa-solid fa-circle-check text-green-400"></i><span id="toast-msg" class="font-bold text-sm">Notification</span></div>
+
+    <div id="app-container">
+        <div id="main-header" class="fixed top-0 w-full bg-white/90 backdrop-blur-md z-40 px-6 py-4 flex justify-between items-center border-b border-slate-100">
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight">TARI</h1>
+            <div class="flex items-center gap-2">
+                <span id="lag-indicator" class="text-[10px] font-mono text-slate-400">Syncing...</span>
+                <div id="status-dot" class="w-2 h-2 rounded-full bg-slate-300"></div>
+            </div>
+        </div>
+
+        <div id="view-home" class="pt-24 px-4">
+            <div class="bg-slate-900 rounded-3xl p-6 text-white mb-6 h-32 flex flex-col justify-center">
+                <h2 class="text-2xl font-bold">Fast Food, Faster App</h2>
+                <p class="text-slate-400 text-xs">Direct Supabase Load Test</p>
+            </div>
+
+            <div id="menu-list" class="space-y-4 mb-10">
+                </div>
+        </div>
+
+        <div id="fab-container" class="fixed bottom-24 left-6 right-6 z-40 hidden">
+            <button class="w-full bg-slate-900 text-white p-5 rounded-2xl shadow-2xl flex justify-between items-center transition-transform active:scale-95">
+                <div class="flex items-center gap-3">
+                    <div class="bg-orange-500 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" id="cart-count">0</div>
+                    <span class="font-bold">Order Now</span>
+                </div>
+                <span class="font-bold text-lg" id="cart-total">SR 0.00</span>
+            </button>
+        </div>
+
+        <div class="fixed bottom-0 w-full bg-white border-t flex justify-around items-center h-20 shadow-lg z-50">
+            <button class="flex flex-col items-center text-orange-500"><i class="fa-solid fa-house"></i><span class="text-[10px] font-bold">Home</span></button>
+            <button class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-receipt"></i><span class="text-[10px] font-bold">Orders</span></button>
+            <button class="flex flex-col items-center text-slate-400"><i class="fa-solid fa-user"></i><span class="text-[10px] font-bold">Profile</span></button>
+        </div>
+    </div>
+    <script>
+        // --- 1. CONFIGURATION ---
+        const SUPABASE_URL = "https://fpgspmhgwcmhaaxsphcd.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZwZ3NwbWhnd2NtaGFheHNwaGNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MjYyMTEsImV4cCI6MjA4MTQwMjIxMX0.QyChZ3agLF1MiTzB8XzbrP4pCgBXsT1i9VWfQqu_VOw";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let cartCount = 0;
+        let cartTotal = 0;
+
+        // --- 2. INSTANT DATA LOAD ---
+        async function fastLoad() {
+            const menuContainer = document.getElementById('menu-list');
+            const lagDisplay = document.getElementById('lag-indicator');
+            const dot = document.getElementById('status-dot');
+            
+            const t0 = performance.now();
+
+            try {
+                // Fetch directly from 'menu' table
+                const { data, error } = await _supabase.from('menu').select('*').order('id', {ascending: true});
+                
+                if (error) throw error;
+
+                const t1 = performance.now();
+                const diff = (t1 - t0).toFixed(0);
+                
+                lagDisplay.innerText = `${diff}ms`;
+                dot.className = "w-2 h-2 rounded-full bg-green-500";
+
+                if (!data || data.length === 0) {
+                    menuContainer.innerHTML = '<p class="text-center py-10 text-slate-400">Menu is empty in database.</p>';
+                    return;
+                }
+
+                // Render Menu Immediately
+                menuContainer.innerHTML = data.map(item => `
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex gap-4">
+                        <img src="${item.image || 'https://via.placeholder.com/150'}" class="w-20 h-20 rounded-xl object-cover bg-slate-50 border">
+                        <div class="flex flex-col justify-center flex-1">
+                            <h3 class="font-bold text-slate-800 text-lg leading-tight">${item.name}</h3>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="font-bold text-orange-600">SR ${item.price}</span>
+                                <button onclick="addToBasket(${item.price}, '${item.name.replace(/'/g, "\\'")}')" class="bg-slate-900 text-white text-[10px] px-4 py-2 rounded-lg font-black uppercase tracking-tighter">Add +</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error(err);
+                dot.className = "w-2 h-2 rounded-full bg-red-500";
+                menuContainer.innerHTML = `<div class="p-4 bg-red-50 text-red-500 rounded-xl text-xs font-bold">Error: ${err.message}</div>`;
+            }
+        }
+
+        // --- 3. UI LOGIC ---
+        function addToBasket(price, name) {
+            cartCount++;
+            cartTotal += parseFloat(price);
+            
+            document.getElementById('cart-count').innerText = cartCount;
+            document.getElementById('cart-total').innerText = `SR ${cartTotal.toFixed(2)}`;
+            document.getElementById('fab-container').classList.remove('hidden');
+            
+            showToast(`Added ${name}`);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        // Run as soon as script parses
+        fastLoad();
+    </script>
+</body>
+</html>
