@@ -387,13 +387,19 @@
         window.handleLogout = async () => { await supabase.auth.signOut(); location.reload(); }
 
         // --- DATA & PRELOADER ---
+        ').select('data').eq('id', 'design').single();
+                if(design?.data?.primaryColor) {
+                    document.documentElement.style.setProperty('--primary', design.data.primaryColor);
+              
+        }
+        
         async function loadData() {
             try {
                 // 1. Fetch Store Status
                 const { data: status } = await supabase.from('settings').select('data').eq('id', 'store_status').single();
                 checkStoreStatus(status?.data?.open ?? false);
 
-                // 2. Fetch Website Settings (Updated)
+                // 2. Fetch Website Settings
                 const { data: web } = await supabase.from('settings').select('data').eq('id', 'website_settings').single();
                 if (web?.data) {
                     const d = web.data;
@@ -401,20 +407,24 @@
                     if(d.bg_image) { document.body.style.backgroundImage = `url('${d.bg_image}')`; }
                     if(d.header_color) { 
                         const h = document.getElementById('main-header'); 
-                        h.style.backgroundColor = d.header_color;
-                        h.classList.remove('bg-white/90', 'backdrop-blur-md');
+                        if(h) {
+                            h.style.backgroundColor = d.header_color;
+                            h.classList.remove('bg-white/90', 'backdrop-blur-md');
+                        }
                     }
                     
                     if(d.logo) {
                         const brand = document.getElementById('brand-container');
-                        brand.className = "flex items-center"; 
-                        brand.innerHTML = `
-                            <img src="${d.logo}" class="h-12 w-auto object-contain rounded-lg shadow-sm relative z-10">
-                            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center z-0">
-                                <h1 class="text-3xl font-black text-white tracking-tight leading-none drop-shadow-md" style="font-family: 'Plus Jakarta Sans', sans-serif;">TARI</h1>
-                                <span class="text-[10px] font-black uppercase tracking-[0.2em] mt-1 text-gold-shine block whitespace-nowrap">Premium Food Truck</span>
-                            </div>
-                        `;
+                        if(brand) {
+                            brand.className = "flex items-center"; 
+                            brand.innerHTML = `
+                                <img src="${d.logo}" class="h-12 w-auto object-contain rounded-lg shadow-sm relative z-10">
+                                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center z-0">
+                                    <h1 class="text-3xl font-black text-white tracking-tight leading-none drop-shadow-md" style="font-family: 'Plus Jakarta Sans', sans-serif;">TARI</h1>
+                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] mt-1 text-gold-shine block whitespace-nowrap">Premium Food Truck</span>
+                                </div>
+                            `;
+                        }
                     }
                 }
 
@@ -426,22 +436,49 @@
 
                 // 3. Fetch Hero
                 const { data: hero } = await supabase.from('settings').select('data').eq('id', 'hero').single();
-                if(hero?.data?.images) { document.getElementById('hero-slider-container').innerHTML = hero.data.images.map((img,i) => `<img src="${img}" class="hero-slide ${i===0?'active-slide':''}">`).join(''); if(hero.data.title) document.getElementById('hero-title-text').innerText = hero.data.title; }
+                const heroContainer = document.getElementById('hero-slider-container');
+                if(hero?.data?.images && heroContainer) { 
+                    heroContainer.innerHTML = hero.data.images.map((img,i) => `<img src="${img}" class="hero-slide ${i===0?'active-slide':''}">`).join(''); 
+                    if(hero.data.title) {
+                        const heroTitle = document.getElementById('hero-title-text');
+                        if(heroTitle) heroTitle.innerText = hero.data.title; 
+                    }
+                }
                 
-                let slideIdx = 0; setInterval(() => { const slides = document.querySelectorAll('.hero-slide'); if(slides.length > 1) { slides[slideIdx].classList.remove('active-slide'); slideIdx = (slideIdx + 1) % slides.length; slides[slideIdx].classList.add('active-slide'); } }, 3000);
+                let slideIdx = 0; 
+                setInterval(() => { 
+                    const slides = document.querySelectorAll('.hero-slide'); 
+                    if(slides.length > 1) { 
+                        slides[slideIdx].classList.remove('active-slide'); 
+                        slideIdx = (slideIdx + 1) % slides.length; 
+                        slides[slideIdx].classList.add('active-slide'); 
+                    } 
+                }, 3000);
 
-                // 4. Fetch Splash & Info
+                // 4. Fetch Splash & Info (FIXED: Checks if elements exist first)
                 const { data: splash } = await supabase.from('settings').select('data').eq('id', 'splash').single();
-                if(splash?.data) { if(splash.data.title) document.getElementById('splash-title-text').innerText = splash.data.title; if(splash.data.background) { document.getElementById('splash-bg-img').src=splash.data.background; document.getElementById('splash-bg-img').classList.remove('hidden'); } if(splash.data.circle) document.getElementById('splash-circle-img').src=splash.data.circle; if(splash.data.intro) document.getElementById('splash-intro').innerText = splash.data.intro; }
+                if(splash?.data) { 
+                    const sTitle = document.getElementById('splash-title-text');
+                    const sBg = document.getElementById('splash-bg-img');
+                    const sCircle = document.getElementById('splash-circle-img');
+                    const sIntro = document.getElementById('splash-intro');
+
+                    if(sTitle && splash.data.title) sTitle.innerText = splash.data.title; 
+                    if(sBg && splash.data.background) { sBg.src=splash.data.background; sBg.classList.remove('hidden'); } 
+                    if(sCircle && splash.data.circle) sCircle.src=splash.data.circle; 
+                    if(sIntro && splash.data.intro) sIntro.innerText = splash.data.intro; 
+                }
                 
                 const { data: info } = await supabase.from('settings').select('data').eq('id', 'info').single();
                 if (info && info.data) {
-                    if(info.data.location) document.getElementById('info-location').innerText = info.data.location;
-                    if(info.data.phone) document.getElementById('info-phone').innerText = info.data.phone;
+                    if(info.data.location) { const el = document.getElementById('info-location'); if(el) el.innerText = info.data.location; }
+                    if(info.data.phone) { const el = document.getElementById('info-phone'); if(el) el.innerText = info.data.phone; }
                     if(info.data.hours && Array.isArray(info.data.hours)) { 
                         const hoursHtml = info.data.hours.map(h => `<div class="flex justify-between w-full max-w-[200px] mb-1"><span>${h.day}:</span> <span class="font-bold text-white">${h.time}</span></div>`).join('');
-                        document.getElementById('info-hours').innerHTML = hoursHtml; 
-                        document.getElementById('closed-hours').innerHTML = hoursHtml; 
+                        const infoHours = document.getElementById('info-hours');
+                        const closedHours = document.getElementById('closed-hours');
+                        if(infoHours) infoHours.innerHTML = hoursHtml; 
+                        if(closedHours) closedHours.innerHTML = hoursHtml; 
                     }
                 }
 
@@ -454,19 +491,14 @@
                 supabase.channel('public:settings').on('postgres_changes', { event: '*', schema: 'public', table: 'settings', filter: "id=eq.store_status" }, payload => {
                     checkStoreStatus(payload.new.data.open);
                 }).subscribe();
-
-            } catch (err) { console.error("Data Load Error:", err); } 
-            finally { 
+                
+            } catch (err) { 
+                console.error("Data Load Error:", err); 
+            } finally { 
                 // SAFETY: Always hide loader
                 document.getElementById('preloader').classList.add('loaded'); 
             }
         }
-
-        function checkStoreStatus(isOpen) {
-            const banner = document.getElementById('closed-banner');
-            if (!isOpen) banner.classList.add('active'); else banner.classList.remove('active');
-        }
-
         // --- BEST SELLER & MENU ---
         function renderBestSellers(items) {
             const best = items.filter(i => i.is_best_seller === true && i.available !== false);
