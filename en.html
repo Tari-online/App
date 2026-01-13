@@ -2602,7 +2602,7 @@ const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.n
 
 // 3. Register SW
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.register('sw.js');
 }
 
 // 4. Android/Desktop Handler
