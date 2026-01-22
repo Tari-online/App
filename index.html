@@ -1337,11 +1337,43 @@ function t(text) {
         }
     };
 
-    window.handleLogin = async (btn) => { 
+        window.handleLogin = async (btn) => { 
+        const emailVal = document.getElementById('login-email').value;
+        const passVal = document.getElementById('login-pass').value;
+
         setBtnLoading(btn, true, "جاري الدخول..."); 
-        const { error } = await sb.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-pass').value }); 
-        if (error) { showToast("فشل تسجيل الدخول", true); setBtnLoading(btn, false, "دخول"); } 
+        
+        // 1. Attempt Login
+        const { data, error } = await sb.auth.signInWithPassword({ 
+            email: emailVal, 
+            password: passVal 
+        }); 
+        
+        // 2. Handle Error
+        if (error) { 
+            showToast("فشل تسجيل الدخول: " + error.message, true); 
+            setBtnLoading(btn, false, "دخول"); 
+            return;
+        } 
+
+        // 3. Handle Success (THIS WAS MISSING)
+        if (data.user) {
+            // Check Security Block
+            const isBlocked = await checkUserBlock();
+            if (isBlocked) return; 
+
+            currentUser = data.user;
+            
+            // Load Data & Close Window
+            await loadUserProfile(currentUser.id);
+            listenToOrders(currentUser.id);
+            closeAuth(); // <--- Closes the modal
+            
+            showToast("تم تسجيل الدخول بنجاح!");
+            setBtnLoading(btn, false, "دخول");
+        }
     };
+
     
     // SIGNUP & OTP LOGIC
         window.handleSignup = async (btn) => { 
