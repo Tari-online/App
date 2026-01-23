@@ -3020,46 +3020,49 @@ setTimeout(() => {
 
 // --- AUTO-SYNC LOGIC ---
 async function forceAppSync() {
-    // 1. Prevent spamming (Throttle)
+    // 1. Prevent spamming
     if(wakeThrottle) return;
     wakeThrottle = true;
     setTimeout(() => wakeThrottle = false, 5000); 
 
-    // 2. Check Network First
-    if (!navigator.onLine) {
-        const isAr = document.documentElement.lang === 'ar';
-        showToast(isAr ? "لا يوجد اتصال بالإنترنت" : "No Internet Connection", true);
-        return;
-    }
+    console.log("🚀 Wake-up detected. Syncing...");
 
-    console.log("🚀 PWA Wake-up: Aggressive Reconnect...");
-
-    // 3. SHOW TOAST (Status Update)
+    // 2. SHOW TOAST
     const t = document.getElementById('toast');
     if(t) {
         document.getElementById('toast-icon').className = "fa-solid fa-rotate fa-spin text-orange-500";
-        document.getElementById('toast-msg').innerText = document.documentElement.lang === 'ar' ? "جاري تحديث الاتصال..." : "Refreshing connection...";
+        document.getElementById('toast-msg').innerText = "جاري التحديث...";
         t.classList.add('show');
         setTimeout(() => t.classList.remove('show'), 3000);
     }
 
+    // 3. ATTEMPT SYNC
     try {
-        // 4. HARD RESET: Kill all previous connections immediately
-        await sb.removeAllChannels(); 
+        await new Promise(r => setTimeout(r, 1500)); // Wait for Wi-Fi
 
-        // 5. Re-Establish Store Status (Open/Close check)
-        listenToStoreStatus();
-
-        // 6. Re-Establish User Data (If logged in)
         if (currentUser) {
             await renderTrackerList(currentUser.id);
+            // Refresh Realtime Listener
+            if (orderSubscription) await sb.removeChannel(orderSubscription);
             listenToOrders(currentUser.id);
+            // 5. Re-Establish Store Status (Open/Close check)
+        listenToStoreStatus();
+
         }
-        
     } catch (err) {
         console.log("Sync warning:", err);
     }
 }
+
+// Trigger sync when user switches tabs or unlocks phone
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'visible') {
+        forceAppSync();
+    }
+});
+
+        
+        
 
 
 
