@@ -1777,9 +1777,8 @@ async function initAuth() {
                 closeAuth(); 
                 loadUserProfile(currentUser.id); 
                 listenToOrders(currentUser.id); 
-            } else { 
-                currentUser = null; 
-            } 
+            }
+                
         }); 
 }
 
