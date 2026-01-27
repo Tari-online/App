@@ -3317,24 +3317,14 @@ window.toggleHistoryItem = (card) => {
 
     // --- 10. REALTIME TRACKER ---
     let orderSubscription = null;
-
     function listenToOrders(uid) {
         if (orderSubscription) sb.removeChannel(orderSubscription);
         const channelName = `orders-tracker-${uid}-${Date.now()}`;
         orderSubscription = sb.channel(channelName)
-            .on(
-                'postgres_changes', 
-                { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${uid}` }, 
-                (payload) => {
-                    console.log("🔔 Order Update Detected:", payload);
-                    renderTrackerList(uid); 
-                    if(payload.new && payload.new.status === 'Completed') { loadUserProfile(uid); }
-                }
-            )
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') { console.log("🟢 Live Tracker Connected"); }
-                else if (status === 'CHANNEL_ERROR') { setTimeout(() => listenToOrders(uid), 5000); }
-            });
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${uid}` }, (payload) => {
+                renderTrackerList(uid); 
+                if(payload.new && payload.new.status === 'Completed') { loadUserProfile(uid); }
+            }).subscribe();
         renderTrackerList(uid); 
     }
     window.dismissOrder = (orderId) => {
