@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tari-cache-v3.0'; // Increment this!
+const CACHE_NAME = 'tari-cache-v4.0'; // Increment this!
 const ASSETS = [
   './', 
   './index.html',  // Arabic
