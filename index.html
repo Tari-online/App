@@ -3321,16 +3321,16 @@ const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.n
 if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                // 1. UNREGISTER any existing workers first (Clean Slate)
+                // 1. UNREGISTER old workers (Clean Slate)
                 const registrations = await navigator.serviceWorker.getRegistrations();
                 for(let registration of registrations) {
                     await registration.unregister();
                 }
 
-                // 2. REGISTER with timestamp to bypass browser cache
-                // This forces the browser to treat it as a brand new file
-                await navigator.serviceWorker.register('sw.js?v=99);
-                console.log('✅ Service Worker Force-Updated');
+                // 2. REGISTER with a FIXED version
+                // ⚠️ Change 'v=99' to 'v=100' whenever you upload a new update!
+                await navigator.serviceWorker.register('sw.js?v=99'); 
+                console.log('✅ Service Worker Registered');
 
                 // 3. RELOAD if the controller changes (Un-breaks the app instantly)
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -3342,6 +3342,7 @@ if ('serviceWorker' in navigator) {
             }
         });
 }
+        
 
 // 4. Handle Android/Desktop (Automatic Install)
 window.addEventListener('beforeinstallprompt', (e) => {
