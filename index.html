@@ -3969,6 +3969,8 @@ async function initAuth() {
         
         // Save the fresh session
         localStorage.setItem('tari_wa_session', JSON.stringify(currentUser));
+        loadUserProfile(currentUser.id);
+        listenToOrders(currentUser.id);
     }
 }
 
