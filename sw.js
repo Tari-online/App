@@ -13,7 +13,7 @@
 //    ✅ Notification click handler (opens/focuses app)
 // ═══════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = `tari-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `tari-runtime-${CACHE_VERSION}`;
 
